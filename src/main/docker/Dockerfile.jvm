@@ -1,5 +1,5 @@
 ####
-# This Dockerfile is used in order to build a container that runs the Quarkus application in JVM mode
+# This Dockerfile is used in order to build a container that runs the kanedafromparis application in JVM mode
 #
 # Before building the docker image run:
 #
@@ -7,16 +7,31 @@
 #
 # Then, build the image with:
 #
-# docker build -f src/main/docker/Dockerfile.jvm -t quarkus/basic-jvm .
+# docker build -f src/main/docker/Dockerfile.jvm -t kanedafromparis/basic-jvm:xxx .
+# docker run \
+#    -v $HOME/.config/gcloud:/root/.config/gcloud \
+#    -v ${pwd}:/workspace \
+#    gcr.io/kaniko-project/executor:latest \
+#    --dockerfile ${dockerfile} --destination ${destination} --context dir:///workspace/ \
+FROM maven:3.6.1-jdk-8-slim AS builder
+ARG SKIP_TESTS="false" 
+RUN ls -l
+COPY *.xml /tmp
+COPY . /tmp
+RUN ls -l /tmp
+RUN cd /tmp && mvn --batch-mode package -DskipTests=${SKIP_TESTS}
 #
 # Then run the container using:
 #
-# docker run -i --rm -p 8080:8080 quarkus/basic-jvm
+# docker run -i --rm -p 8080:8080 kanedafromparis/importxls-jvm
 #
 ###
-FROM fabric8/java-alpine-openjdk8-jre
+FROM fabric8/java-alpine-openjdk8-jre:1.6.3
+#FROM adoptopenjdk/openjdk8:x86_64-alpine-jre8u212-b03
+
 ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 ENV AB_ENABLED=jmx_exporter
-COPY target/lib/* /deployments/lib/
-COPY target/*-runner.jar /deployments/app.jar
+COPY --from=builder /tmp/target/lib/* /deployments/lib/
+COPY --from=builder /tmp/target/*-runner.jar /deployments/app.jar
 ENTRYPOINT [ "/deployments/run-java.sh" ]
+
