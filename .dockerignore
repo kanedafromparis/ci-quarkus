@@ -1,4 +1,6 @@
-*
-!target/*-runner
-!target/*-runner.jar
-!target/lib/*
+# comment in order to allows 
+# docker builder
+#*
+#!target/*-runner
+#!target/*-runner.jar
+#!target/lib/*

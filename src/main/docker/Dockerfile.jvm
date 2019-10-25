@@ -14,9 +14,23 @@
 # docker run -i --rm -p 8080:8080 quarkus/basic-jvm
 #
 ###
-FROM fabric8/java-alpine-openjdk8-jre
+FROM maven:3.6.2-jdk-8-slim AS builder
+ARG SKIP_TESTS="false" 
+RUN ls -l
+COPY *.xml /tmp
+COPY . /tmp
+RUN ls -l /tmp
+RUN cd /tmp && mvn --batch-mode package -DskipTests=${SKIP_TESTS}
+#
+# Then run the container using:
+#
+# docker run -i --rm -p 8080:8080 kanedafromparis/importxls-jvm
+#
+###
+FROM fabric8/java-alpine-openjdk8-jre:1.6.3
+
 ENV JAVA_OPTIONS="-Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 ENV AB_ENABLED=jmx_exporter
-COPY target/lib/* /deployments/lib/
-COPY target/*-runner.jar /deployments/app.jar
+COPY --from=builder /tmp/target/lib/* /deployments/lib/
+COPY --from=builder /tmp/target/*-runner.jar /deployments/app.jar
 ENTRYPOINT [ "/deployments/run-java.sh" ]
